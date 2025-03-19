@@ -50,18 +50,14 @@
   .calendar-day {
     position: relative;
     border-right: 1px solid #e0e0e0;
-    border-bottom: 1px solid #e0e0e0;
-    min-height: 120px;
+    border-bottom: 1px solid #e0e0e0; 
     box-sizing: border-box;
     
     &:nth-child(7n) {
       border-right: none;
     }
     
-    &__number {
-      position: absolute;
-      top: 5px;
-      left: 10px;
+    &__number { 
       font-size: 14px;
       font-weight: 500;
       

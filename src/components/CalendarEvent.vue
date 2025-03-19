@@ -41,12 +41,8 @@
   </script>
   
   <style lang="scss">
-  .calendar-event {
-    position: absolute;
-    top: 30px;
-    left: 0;
-    right: 0;
-    margin: 0 5px;
+  .calendar-event { 
+    margin: 4px;
     border-radius: 4px;
     overflow: hidden;
     z-index: 0;

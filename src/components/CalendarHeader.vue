@@ -21,16 +21,16 @@
   
   <style lang="scss">
   .calendar-header {
-    display: grid;
-    grid-template-columns: repeat(7, 1fr);
-    background-color: #f8f8f8;
-    border-bottom: 1px solid #e0e0e0;
+    display: flex;
+    width: 100%;
+    max-height: 30px;
     
     &__day {
-      text-align: center;
-      padding: 10px;
-      font-weight: 500;
-      font-size: 14px;
+      flex: 1;
+    padding: 5px;
+    text-align: center; 
+    font-weight: bold;
+    line-height: 20px;
       
       &--sunday {
         color: #e53935;

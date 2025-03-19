@@ -4,9 +4,6 @@
       :class="`calendar-event--${event.color}`"
     >
       <div class="calendar-event__time">
-        {{ event.times[0] }}
-      </div>
-      <div class="calendar-event__details">
         <div 
           v-for="(time, index) in event.times" 
           :key="index"
@@ -56,13 +53,6 @@
     }
     
     &__time {
-      text-align: center;
-      padding: 2px 4px;
-      font-size: 12px;
-      background-color: rgba(0, 0, 0, 0.05);
-    }
-    
-    &__details {
       padding: 5px;
     }
     
@@ -100,7 +90,7 @@
     }
     
     @media screen and (max-width: 768px) {
-      &__details {
+      &__time {
         padding: 2px;
       }
       
@@ -114,7 +104,7 @@
     }
     
     @media screen and (max-width: 480px) {
-      &__details {
+      &__time {
         display: none;
       }
       

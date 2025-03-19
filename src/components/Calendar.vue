@@ -110,11 +110,7 @@
   </script>
   
   <style lang="scss">
-  .calendar {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    border-radius: 12px;
-    border: 1px solid #e0e0e0;
-    overflow: hidden;
+  .calendar {  
     width: 100%;
   }
   </style>

@@ -1,19 +1,109 @@
 <!-- eslint-disable vue/max-attributes-per-line -->
 <!-- eslint-disable vue/block-lang -->
 <template>
-  <div class="app">
-    <h1>Vue 3 Calendar Component</h1>
-    <Calendar />
+  <!-- Header -->
+  <div class="d-flex" style="gap: 8px">
+    <v-btn
+      icon
+      flat
+      base-color="black"
+      width="24"
+      height="24"
+      @click="previousMonth(state.today)"
+    >
+      <v-icon size="small"> mdi-chevron-left </v-icon>
+    </v-btn>
+    <v-btn
+      icon
+      flat
+      base-color="black"
+      width="24"
+      height="24"
+      @click="nextMonth(state.today)"
+    >
+      <v-icon size="small"> mdi-chevron-right </v-icon>
+    </v-btn>
+    <p style="margin-left: 8px">time: {{ formatJPDate(state.today) }}</p>
+  </div>
+  <!-- Calendar -->
+  <div class="container-calendar">
+    <div class="v-calendar-weekly__head days__7">
+      <template v-for="weekday in [0, 1, 2, 3, 4, 5, 6]" :key="weekday">
+        <div class="v-calendar-weekly__head-weekday" style="margin: 8px">
+          {{ ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][weekday] }}
+        </div>
+      </template>
+    </div>
+
+    <div class="v-calendar-month__days days__7">
+      <template v-for="week in chunkArray(state.daysList, 7)">
+        <template v-for="day in week" :key="day.isoDate">
+          <v-calendar-month-day
+            :day="day"
+            :title="getTitle(day)"
+            :events="eventHandle(day)"
+            :disabled="day.isDisabled"
+          >
+            <!-- <template #event="{ event }">
+              <div
+                class="event-item"
+                :style="{ backgroundColor: event.color }"
+                @click="handleEventClick(event)"
+              >
+                <v-icon small class="mr-1">{{
+                  getEventIcon(event.title)
+                }}</v-icon>
+                <span class="event-title">{{ event.title }}</span>
+                <span class="event-time">
+                  {{ formatTime(event.start) }} - {{ formatTime(event.end) }}
+                </span>
+              </div>
+            </template> -->
+
+            <template #title="{ title }">
+              <div
+                :class="`title ${day.isDisabled ? 'disabled' : ''} ${
+                  day.isToday ? 'today' : ''
+                }`"
+              >
+                <p>{{ title }}</p>
+              </div>
+            </template>
+
+            <template #content>
+              <div class="saymeme">
+                <div
+                  v-for="event in eventHandle(day).filter((e) => e.allDay)"
+                  :key="event"
+                >
+                  <v-chip density="comfortable" width="100%" color="yellow">
+                    {{ event?.title }}{{ event?.allDay }}
+                  </v-chip>
+                </div>
+                <div
+                  v-for="event in eventHandle(day).filter((e) => !e.allDay)"
+                  :key="event"
+                >
+                  <v-chip density="comfortable" width="100%">
+                    {{ event?.title }}
+                  </v-chip>
+                </div>
+              </div>
+            </template>
+          </v-calendar-month-day>
+        </template>
+      </template>
+    </div>
+
+    <div style="margin: 10px 0">line spave</div>
   </div>
 </template>
 
 <script setup>
-import { onMounted, ref, computed } from "vue";
+import { onMounted, ref, computed, reactive, watch } from "vue";
 import { useDate } from "vuetify";
 
-const calendar = ref();
-const today = ref(new Date());
-const events = ref([]);
+let events = [];
 const colors = [
   "#2196F3",
   "#3F51B5",
@@ -33,37 +123,84 @@ const names = [
   "Conference",
   "Party",
 ];
-
-const selectedDate = ref(new Date());
-const daysList = ref([]);
 const adapter = useDate();
 
+const state = reactive({
+  today: adapter.date(),
+  daysList: [],
+});
+
+watch(
+  () => state.today,
+  (newVal) => {
+    const weeksInMonth = adapter.getWeekArray(adapter.date(newVal));
+    const days = weeksInMonth.flat();
+    const daysInMonth = genDays(days, newVal);
+    state.daysList = daysInMonth;
+  }
+);
+
 onMounted(() => {
-  const adapter = useDate();
   fetchEvents({
     start: adapter.startOfDay(adapter.startOfMonth(new Date())),
     end: adapter.endOfDay(adapter.endOfMonth(new Date())),
   });
-  if (calendar.value) {
-    daysList.value = calendar.value.daysInMonth || [];
-    console.log("Days in month:", daysList.value);
-  }
+  //
+  const weeksInMonth = adapter.getWeekArray(adapter.date(state.today));
+  const days = weeksInMonth.flat();
+  const daysInMonth = genDays(days, state.today);
+  state.daysList = daysInMonth;
+  console.log("daysInMonth", daysInMonth);
+
+  console.log("events", events);
 });
 
 function eventHandle(day) {
-  return events?.value.filter(
+  // console.log('eventHandle', {date: day.date,event: events?.value[0], start: events.value[0].start},  adapter.isSameMonth(day.date, events.value[0].start))
+  return events.filter(
     (e) =>
       adapter.isSameDay(day.date, e.start) || adapter.isSameDay(day.date, e.end)
   );
 }
 
-function getAllowedDates(day) {
-  console.log("adapter getMonth", adapter.getMonth(adapter.date("2025-03-12")));
-  console.log(
-    "adapter getWeekArray",
-    adapter.getWeekArray(adapter.getMonth(adapter.date("2025-03-12")), 1)
-  );
-  console.log("adapter ", adapter.getWeekdays);
+const weekDays = computed(() => {
+  return [0, 1, 2, 3, 4, 5, 6].map((day) => (day + 0) % 7);
+});
+
+function genDays(days, today) {
+  return days
+    .filter((date) => {
+      return weekDays.value.includes(adapter.toJsDate(date).getDay());
+    })
+    .map((date, index) => {
+      const isoDate = adapter.toISO(date);
+      const isAdjacent = !adapter.isSameMonth(date, today);
+      const isStart = adapter.isSameDay(date, adapter.startOfMonth(today));
+      const isEnd = adapter.isSameDay(date, adapter.endOfMonth(today));
+      const isSame = adapter.isSameDay(date, today);
+      const isBefore = adapter.isBefore(date, today);
+      const isToday = adapter.isSameDay(date, today);
+      console.log("isSunday", adapter.getDate(date));
+
+      return {
+        date,
+        isoDate,
+        formatted: adapter.format(date, "keyboardDate"),
+        year: adapter.getYear(date),
+        month: adapter.getMonth(date),
+        isDisabled: isBefore && !isToday, // TODO: check điều kiện để bật isDisabled
+        isWeekStart: index % 7 === 0,
+        isWeekEnd: index % 7 === 6,
+        isToday: isToday,
+        isAdjacent,
+        isHidden: false,
+        isStart,
+        isSelected: true,
+        isEnd,
+        isSame,
+        localized: adapter.format(date, "dayOfMonth"),
+      };
+    });
 }
 
 function chunkArray(array, size = 1) {
@@ -76,22 +213,12 @@ function getTitle(day) {
   return day ? adapter.format(day.date, "dayOfMonth") : "NaN";
 }
 
-function getMode(day) {
-  if (adapter.format(day.date, "dayOfMonth") < 18) return true;
-  return false;
-}
-
-function getColor(day) {
-  if (adapter.format(day.date, "dayOfMonth") == 18) return "blue";
-  console.log(adapter.format(day.date, "dayOfMonth"));
-  return "red";
-}
 function fetchEvents({ start, end }) {
   const _events = [];
   const min = start.getTime();
   const max = end.getTime();
   const days = (max - min) / 86400000;
-  const eventCount = rnd(days, days + 20);
+  const eventCount = rnd(days, days + 70);
 
   for (let i = 0; i < eventCount; i++) {
     const allDay = rnd(0, 3) === 0;
@@ -108,62 +235,29 @@ function fetchEvents({ start, end }) {
       allDay,
     });
   }
-  events.value = _events;
+  events = _events;
+}
+function formatJPDate(date) {
+  const year = adapter.getYear(date);
+  const month = adapter.getMonth(date) + 1; // Months are zero-based
+  return `${year}Year${month}Month`;
 }
 
+function previousMonth(date) {
+  console.log("previous month before", state.today);
+  const currentMonth = adapter.getMonth(date);
+  state.today = adapter.setMonth(state.today, currentMonth - 1);
+  console.log("previous month after", state.today);
+}
+
+function nextMonth(date) {
+  console.log("next month before", state.today);
+  const currentMonth = adapter.getMonth(date);
+  state.today = adapter.setMonth(state.today, currentMonth + 1);
+  console.log("next month after", state.today);
+}
 function rnd(a, b) {
   return Math.floor((b - a + 1) * Math.random()) + a;
-}
-
-// Format thời gian
-function formatTime(date) {
-  return new Date(date).toLocaleTimeString("vi-VN", {
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-}
-
-// Lấy icon theo loại sự kiện
-function getEventIcon(title) {
-  const icons = {
-    Meeting: "mdi-account-group",
-    Holiday: "mdi-beach",
-    PTO: "mdi-airplane-takeoff",
-    Travel: "mdi-briefcase",
-    Event: "mdi-calendar-star",
-    Birthday: "mdi-cake",
-    Conference: "mdi-presentation",
-    Party: "mdi-party-popper",
-  };
-  return icons[title] || "mdi-calendar";
-}
-
-// Kiểm tra ngày hiện tại
-function isToday(date) {
-  const todayDate = new Date();
-  return (
-    date.getDate() === todayDate.getDate() &&
-    date.getMonth() === todayDate.getMonth() &&
-    date.getFullYear() === todayDate.getFullYear()
-  );
-}
-
-// Lấy sự kiện theo ngày
-function getEventsForDay(date) {
-  return events.value.filter((event) => {
-    const eventDate = new Date(event.start);
-    return (
-      eventDate.getDate() === date.getDate() &&
-      eventDate.getMonth() === date.getMonth() &&
-      eventDate.getFullYear() === date.getFullYear()
-    );
-  });
-}
-
-// Xử lý click vào sự kiện
-function handleEventClick(event) {
-  console.log("Event clicked:", event);
-  // Thêm logic xử lý tại đây (ví dụ: mở dialog chi tiết)
 }
 </script>
 
@@ -186,7 +280,7 @@ function handleEventClick(event) {
 
 .event-time {
   opacity: 0.8;
-  margin-left: auto;
+  display: none;
 }
 
 .event-action {
@@ -212,142 +306,68 @@ function handleEventClick(event) {
 }
 
 .v-calendar-month__days {
-  display: grid;
-  flex: 1 1;
-  border: thin solid #e0e0e0;
+  border: thin solid black;
+  border-radius: 16px;
+  .v-calendar-month__day {
+    .v-calendar-weekly__day-label {
+      cursor: cell;
+    }
+  }
+  .v-calendar-weekly__day-label {
+    .title {
+      height: 32px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      p {
+        width: 24px;
+        height: 24px;
+        border-radius: 12px;
+      }
+    }
+    .title.disabled {
+      p {
+        background-color: white;
+        color: gray;
+      }
+    }
+    .title.today {
+      p {
+        background-color: black;
+        color: white;
+      }
+    }
+  }
 }
 
-.v-calendar-month__days > .v-calendar-month__day {
-  min-height: var(150px);
+.v-calendar-month__day:nth-last-child(-n + 7) {
+  border-bottom: none;
 }
 
-.v-calendar-month__days.days__0,
-.v-calendar-month__days.days__1 {
-  grid-template-columns: 1fr;
+.container-calendar {
+  border-radius: 30px;
 }
 
-.v-calendar-month__days.days__0 > .v-calendar-month__day,
-.v-calendar-month__days.days__1 > .v-calendar-month__day {
-  border-right: none;
+.v-calendar-weekly__head-weekday {
+  border: none;
 }
 
-.v-calendar-month__days.days__2 {
-  grid-template-columns: repeat(2, 1fr);
-}
-.v-calendar-month__days.days__2 > .v-calendar-month__day:nth-child(2n) {
-  border-right: none;
+.v-calendar-weekly__head-weekday:nth-child(1) {
+  color: red;
 }
 
-.v-calendar-month__days.days__3 {
-  grid-template-columns: repeat(3, 1fr);
-}
-.v-calendar-month__days.days__3 > .v-calendar-month__day:nth-child(3n) {
-  border-right: none;
+.v-calendar-weekly__head-weekday:nth-child(7) {
+  color: blue;
 }
 
-.v-calendar-month__days.days__4 {
-  grid-template-columns: repeat(4, 1fr);
+.v-calendar-month__day:nth-child(7n) {
+  p {
+    color: blue;
+  }
 }
-.v-calendar-month__days.days__4 > .v-calendar-month__day:nth-child(4n) {
-  border-right: none;
-}
-
-.v-calendar-month__days.days__5 {
-  grid-template-columns: repeat(5, 1fr);
-}
-.v-calendar-month__days.days__5 > .v-calendar-month__day:nth-child(5n) {
-  border-right: none;
-}
-
-.v-calendar-month__days.days__6 {
-  grid-template-columns: repeat(6, 1fr);
-}
-.v-calendar-month__days.days__6 > .v-calendar-month__day:nth-child(6n) {
-  border-right: none;
-}
-
-.v-calendar-month__days.days__6.v-calendar-month__weeknumbers {
-  grid-template-columns: var(24px) repeat(6, 1fr);
-}
-
-.v-calendar-month__days.days__7 {
-  grid-template-columns: repeat(7, 1fr);
-}
-.v-calendar-month__days.days__7 > .v-calendar-month__day:nth-child(7n) {
-  border-right: none;
-}
-
-.v-calendar-month__days.days-with-weeknumbers__0,
-.v-calendar-month__days.days-with-weeknumbers__1 {
-  grid-template-columns: var(24px) 1fr;
-}
-
-.v-calendar-month__days.days-with-weeknumbers__0 > .v-calendar-month__day,
-.v-calendar-month__days.days-with-weeknumbers__1 > .v-calendar-month__day {
-  border-right: none;
-}
-
-.v-calendar-month__days.days-with-weeknumbers__2 {
-  grid-template-columns: var(24px) repeat(2, 1fr);
-}
-.v-calendar-month__days.days-with-weeknumbers__2
-  > .v-calendar-month__day:nth-child(3n) {
-  border-right: none;
-}
-
-.v-calendar-month__days.days-with-weeknumbers__3 {
-  grid-template-columns: var(24px) repeat(3, 1fr);
-}
-.v-calendar-month__days.days-with-weeknumbers__3
-  > .v-calendar-month__day:nth-child(4n) {
-  border-right: none;
-}
-
-.v-calendar-month__days.days-with-weeknumbers__4 {
-  grid-template-columns: var(24px) repeat(4, 1fr);
-}
-.v-calendar-month__days.days-with-weeknumbers__4
-  > .v-calendar-month__day:nth-child(5n) {
-  border-right: none;
-}
-
-.v-calendar-month__days.days-with-weeknumbers__5 {
-  grid-template-columns: var(24px) repeat(5, 1fr);
-}
-.v-calendar-month__days.days-with-weeknumbers__5
-  > .v-calendar-month__day:nth-child(6n) {
-  border-right: none;
-}
-
-.v-calendar-month__days.days-with-weeknumbers__6 {
-  grid-template-columns: var(24px) repeat(6, 1fr);
-}
-.v-calendar-month__days.days-with-weeknumbers__6
-  > .v-calendar-month__day:nth-child(7n) {
-  border-right: none;
-}
-
-.v-calendar-month__days.days-with-weeknumbers__7 {
-  grid-template-columns: var(24px) repeat(7, 1fr);
-}
-.v-calendar-month__days.days-with-weeknumbers__7
-  > .v-calendar-month__day:nth-child(7n) {
-  border-right: var(thin) solid var(thin);
-}
-.v-calendar-month__days.days-with-weeknumbers__7
-  > .v-calendar-month__day:nth-child(8n) {
-  border-right: none;
-}
-
-.v-calendar-month__day {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-  min-height: 150px;
-  border-right: thin solid #e0e0e0;
-  border-bottom: thin solid #e0e0e0;
-  flex: 1 1 auto;
-  border-inline-end: thin solid #e0e0e0;
+.v-calendar-month__day:nth-child(7n + 1) {
+  p {
+    color: red;
+  }
 }
 </style>

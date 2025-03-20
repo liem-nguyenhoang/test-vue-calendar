@@ -48,7 +48,7 @@ function getTitle(day) {
 <style lang="scss">
 .calendar-grid {
   &__days {
-    border: thin solid gray;
+    border: thin solid #f4f4f4;
     border-radius: 16px;
   }
 }

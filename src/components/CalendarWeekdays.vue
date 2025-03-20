@@ -27,6 +27,8 @@
     margin: 8px;
     border: none;
     text-align: center;
+    font-size: 12px;
+    font-weight: 700;
 
     &--sunday {
       color: red;
@@ -34,6 +36,17 @@
 
     &--saturday {
       color: blue;
+    }
+  }
+}
+
+@media (max-width: 320px) {
+  .calendar-weekdays {
+    display: flex;
+
+    &__day {
+      font-size: 10px;
+      font-weight: 700;
     }
   }
 }

@@ -1,27 +1,37 @@
 <template>
+  <div class="calendar-header-responsive">
+    <div class="calendar-header-responsive__location">
+      <select class="option">
+        <option selected>東京ドームシティ駐車場</option>
+        <option>東京ドームシティ駐車場2</option>
+        <option>東京ドームシティ駐車場3</option>
+      </select>
+      <v-icon size="small" color="#474747">mdi-chevron-down</v-icon>
+    </div>
+  </div>
   <div class="calendar-header">
     <div class="calendar-header__date-time">
       <v-btn
         icon
         flat
-        base-color="black"
+        base-color="#f4f4f4"
         width="24"
         height="24"
         @click="$emit('previous-month', currentDate)"
         class="nav-btn"
       >
-        <v-icon size="small">mdi-chevron-left</v-icon>
+        <v-icon size="small" color="#474747">mdi-chevron-left</v-icon>
       </v-btn>
       <v-btn
         icon
         flat
-        base-color="black"
+        base-color="#f4f4f4"
         width="24"
         height="24"
         @click="$emit('next-month', currentDate)"
         class="nav-btn"
       >
-        <v-icon size="small">mdi-chevron-right</v-icon>
+        <v-icon size="small" color="#474747">mdi-chevron-right</v-icon>
       </v-btn>
       <p class="date-text">
         {{ formatJPDate(currentDate) }}
@@ -31,13 +41,16 @@
     <div class="calendar-header__location">
       <select class="option">
         <option selected>東京ドームシティ駐車場</option>
+        <option>東京ドームシティ駐車場2</option>
+        <option>東京ドームシティ駐車場3</option>
       </select>
+      <v-icon class="location-icon">mdi-chevron-down</v-icon>
     </div>
 
     <!-- Add scheduler -->
     <button class="calendar-header__add-schedule">
-      <span class="icon">+</span>
-      <span class="text">定型スケジュール</span>
+      <v-icon class="add-schedule-icon">mdi-plus</v-icon>
+      <span class="add-schedule-text">定型スケジュール</span>
     </button>
   </div>
 </template>
@@ -65,6 +78,25 @@ function formatJPDate(date) {
 </script>
 
 <style lang="scss">
+.calendar-header-responsive {
+  display: none;
+  &__location {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 12px;
+    border-radius: 16px;
+    border: 1px solid #e0e0e0;
+    font-size: 14px;
+    margin-bottom: 16px;
+
+    & .option {
+      width: 100%;
+      font-size: 12px;
+    }
+  }
+}
 .calendar-header {
   display: flex;
   align-items: center;
@@ -75,38 +107,94 @@ function formatJPDate(date) {
     gap: 8px;
 
     & .date-text {
+      font-size: 16px;
       margin-left: 8px;
+      color: #1f1f1f;
+      font-weight: 700;
     }
   }
 
   &__location {
-    flex-grow: 1;
-    max-width: 440px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 440px;
+    min-width: 288px;
+    padding: 8px 12px;
+    border-radius: 16px;
+    border: 1px solid #e0e0e0;
+    font-size: 14px;
+
     & .option {
       width: 100%;
-      padding: 8px 12px;
-      border-radius: 16px;
-      border: 1px solid #e0e0e0;
-      background-color: #yellow;
-      font-size: 14px;
-      padding-right: 32px;
+      font-size: 12px;
     }
   }
 
   &__add-schedule {
     display: flex;
     align-items: center;
-    gap: 8px;
-    padding: 8px 16px;
-    background-color: #f5f5f5;
+    padding: 8px 20px;
+    background-color: #f4f4f4;
     border: none;
-    border-radius: 16px;
+    border-radius: 30px;
     cursor: pointer;
     font-size: 14px;
-    margin-left: 16px;
+    gap: 4px;
+    width: 160px;
 
-    & .icon {
-      font-weight: bold;
+    & .add-schedule {
+      &-icon {
+        color: #474747;
+        font-weight: bold;
+        font-size: 16px;
+      }
+      &-text {
+        font-size: 12px;
+        font-weight: 700;
+      }
+    }
+  }
+}
+
+@media (max-width: 800px) {
+  .calendar-header-responsive {
+    display: flex;
+  }
+  .calendar-header {
+    &__location {
+      display: none;
+    }
+  }
+}
+
+@media (max-width: 320px) {
+  .calendar-header-responsive {
+    display: flex;
+  }
+  .calendar-header {
+    &__date-time {
+      & .date-text {
+        font-size: 14px;
+      }
+    }
+
+    &__location {
+      display: none;
+    }
+
+    &__add-schedule {
+      padding: 8px 10px;
+      width: 128px;
+      gap: 0;
+
+      & .add-schedule-icon {
+        font-size: 12px;
+      }
+
+      & span {
+        font-size: 12px;
+      }
     }
   }
 }

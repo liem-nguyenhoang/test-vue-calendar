@@ -119,7 +119,7 @@ function fetchEvents({ start, end }) {
   const eventCount = rnd(days, days + 70);
 
   for (let i = 0; i < eventCount; i++) {
-    const allDay = rnd(0, 3) === 0;
+    const allDay = rnd(1, 3) === 2;
     const firstTimestamp = rnd(min, max);
     const first = new Date(firstTimestamp - (firstTimestamp % 900000));
     const secondTimestamp = rnd(2, allDay ? 288 : 8) * 900000;
@@ -133,6 +133,7 @@ function fetchEvents({ start, end }) {
       allDay,
     });
   }
+  _events.map((val) => console.log("_events", val.allDay));
   events = _events;
 }
 
@@ -153,9 +154,21 @@ function rnd(a, b) {
 
 <style lang="scss">
 .calendar {
-  padding: 12px;
+  padding: 24px;
+  max-width: 960px;
+  width: 100%;
+  border-radius: 20px;
+  border: none;
+  background-color: #ffff;
+
   &__footer {
     margin: 10px 0;
+  }
+}
+
+@media (max-width: 320px) {
+  .calendar {
+    padding: 12px;
   }
 }
 </style>

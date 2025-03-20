@@ -1,11 +1,23 @@
 <!-- components/CalendarEvent.vue -->
 <template>
-  <div class="calendar-event">
+  <div
+    class="calendar-event"
+    :class="{
+      'calendar-event--disabled': isDisabled,
+      'calendar-event--active': event.allDay,
+    }"
+  >
     <div
       class="calendar-event__dot"
-      :style="{ backgroundColor: event.color }"
+      :style="{ backgroundColor: isDisabled ? '#9e9e9e' : event.color }"
     ></div>
-    <div class="calendar-event__text">10:00 - 12:00</div>
+    <div class="calendar-event__text">
+      <div class="calendar-event__text--start">
+        10:00
+        <div>-</div>
+      </div>
+      <div class="calendar-event__text--end">12:00</div>
+    </div>
   </div>
 </template>
 
@@ -26,20 +38,16 @@ defineProps({
 .calendar-event {
   display: flex;
   align-items: center;
-  padding: 4px;
   border-radius: 4px;
   font-size: 12px;
   justify-content: center;
-
-  &:hover {
-    background-color: rgba(0, 0, 0, 0.05);
-  }
+  margin: 4px 8px;
+  padding: 2px 4px;
 
   &__dot {
     width: 6px;
     height: 6px;
     border-radius: 50%;
-    margin-right: 5px;
     flex-shrink: 0;
   }
 
@@ -47,6 +55,73 @@ defineProps({
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+
+    &--start {
+      display: flex;
+      gap: 3px;
+    }
+
+    &--end:before {
+      content: " ";
+      display: inline-block;
+      width: 2px;
+      height: 2px;
+    }
+  }
+
+  &--active {
+    background-color: #d6e8f3;
+    & .calendar-event__dot {
+      display: none;
+    }
+  }
+
+  &--disabled {
+    background-color: #e0e0e0;
+    color: #9e9e9e;
+  }
+}
+
+@media (max-width: 320px) {
+  .calendar-event {
+    margin: 0 2px;
+    padding: 2px;
+    &__dot {
+      width: 4px;
+      height: 4px;
+    }
+
+    &--active:not(.calendar-event--disabled) {
+      .calendar-event__text {
+        &--end:before {
+          display: none;
+        }
+      }
+      & .calendar-event__text {
+        display: flex;
+        flex-direction: column;
+      }
+    }
+
+    &__text {
+      font-size: 8px;
+      &--start {
+        gap: 0;
+      }
+      // &--hyphen:before {
+      //   display: none;
+      // }
+      // &--hyphen:after {
+      //   display: none;
+      // }
+      // &--end {
+      //   display: none;
+      // }
+    }
   }
 }
 </style>

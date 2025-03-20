@@ -8,3 +8,16 @@
 <script setup>
 import Calendar from "./Calendar.vue";
 </script>
+
+<style>
+.app {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background-color: gray;
+
+  h1 {
+    margin-bottom: 24px;
+  }
+}
+</style>

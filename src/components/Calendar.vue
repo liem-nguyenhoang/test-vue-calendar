@@ -1,137 +1,161 @@
 <template>
   <div class="calendar">
-    <CalendarHeader />
-    <CalendarGrid
-      :days="days"
-      :events="events"
-      :selectedDate="selectedDate"
-      :today="today"
+    <calendar-header
+      :current-date="state.today"
+      @previous-month="previousMonth"
+      @next-month="nextMonth"
     />
+    <calendar-grid :days-list="state.daysList" :event-handler="eventHandle" />
+    <div class="calendar__footer">line space</div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed } from "vue";
+import { onMounted, computed, reactive, watch } from "vue";
+import { useDate } from "vuetify";
 import CalendarHeader from "./CalendarHeader.vue";
 import CalendarGrid from "./CalendarGrid.vue";
 
-// Mock data - in a real app, this would come from props or API
-const today = ref(new Date(2023, 6, 15)); // July 13th as today
-const selectedDate = ref(new Date(2023, 5, 27)); // June 27th as selected
+let events = [];
+const colors = [
+  "#2196F3",
+  "#3F51B5",
+  "#673AB7",
+  "#00BCD4",
+  "#4CAF50",
+  "#FF9800",
+  "#757575",
+];
+const names = [
+  "Meeting",
+  "Holiday",
+  "PTO",
+  "Travel",
+  "Event",
+  "Birthday",
+  "Conference",
+  "Party",
+];
+const adapter = useDate();
 
-// Generate calendar days data
-const days = computed(() => {
-  const currentMonth = today.value.getMonth();
-  const currentYear = today.value.getFullYear();
-
-  // Get the first day of the month
-  const firstDayOfMonth = new Date(currentYear, currentMonth, 1);
-  const dayOfWeek = firstDayOfMonth.getDay();
-
-  // Get the last day of the previous month
-  const lastDayOfPrevMonth = new Date(currentYear, currentMonth, 0).getDate();
-
-  // Get the last day of the current month
-  const lastDayOfCurrMonth = new Date(
-    currentYear,
-    currentMonth + 1,
-    0
-  ).getDate();
-
-  const calendarDays = [];
-
-  // Add days from previous month
-  for (let i = dayOfWeek - 1; i >= 0; i--) {
-    calendarDays.push({
-      date: new Date(currentYear, currentMonth - 1, lastDayOfPrevMonth - i),
-      isCurrentMonth: false,
-      isToday: false,
-      isSelected: false,
-    });
-  }
-
-  // Add days from current month
-  for (let i = 1; i <= lastDayOfCurrMonth; i++) {
-    const date = new Date(currentYear, currentMonth, i);
-    calendarDays.push({
-      date,
-      isCurrentMonth: true,
-      isToday:
-        i === today.value.getDate() && currentMonth === today.value.getMonth(),
-      isSelected:
-        i === selectedDate.value.getDate() &&
-        currentMonth === selectedDate.value.getMonth() &&
-        currentYear === selectedDate.value.getFullYear(),
-    });
-  }
-
-  // Add days from next month to fill the grid
-  const remainingDays = 42 - calendarDays.length; // 6 rows * 7 days = 42
-  for (let i = 1; i <= remainingDays; i++) {
-    calendarDays.push({
-      date: new Date(currentYear, currentMonth + 1, i),
-      isCurrentMonth: false,
-      isToday: false,
-      isSelected: false,
-    });
-  }
-
-  return calendarDays;
+const state = reactive({
+  today: adapter.date(),
+  daysList: [],
 });
 
-// Mock events data
-const events = ref([
-  {
-    date: new Date(2023, 5, 28), // June 28
-    color: "grey",
-    times: ["10:00 - 12:00", "10:00 - 12:00", "10:00 - 12:00"],
-  },
-  {
-    date: new Date(2023, 6, 7), // July 7
-    color: "grey",
-    times: ["10:00 - 12:00", "10:00 - 12:00", "10:00 - 12:00"],
-  },
-  {
-    date: new Date(2023, 6, 14), // July 14
-    color: "blue",
-    times: [
-      "10:00 - 12:00",
-      "10:00 - 12:00",
-      "10:00 - 12:00",
-      "10:00 - 12:00",
-      "10:00 - 12:00",
-      "10:00 - 12:00",
-      "10:00 - 12:00",
-      "10:00 - 12:00",
-      "10:00 - 12:00",
-    ],
-  },
-  {
-    date: new Date(2023, 6, 18), // July 18
-    color: "blue",
-    times: ["10:00 - 12:00"],
-  },
-  {
-    date: new Date(2023, 6, 21), // July 21
-    color: "blue",
-    times: ["10:00 - 12:00"],
-  },
-  {
-    date: new Date(2023, 6, 24), // July 24
-    color: "blue",
-    times: ["10:00 - 12:00", "10:00 - 12:00", "10:00 - 12:00"],
-    hasRedEvent: true,
-  },
-  {
-    date: new Date(2023, 6, 28), // July 28
-    color: "blue",
-    times: ["10:00 - 12:00", "10:00 - 12:00", "10:00 - 12:00"],
-  },
-]);
+watch(
+  () => state.today,
+  (newVal) => {
+    const weeksInMonth = adapter.getWeekArray(adapter.date(newVal));
+    const days = weeksInMonth.flat();
+    const daysInMonth = genDays(days, newVal);
+    state.daysList = daysInMonth;
+  }
+);
+
+onMounted(() => {
+  fetchEvents({
+    start: adapter.startOfDay(adapter.startOfMonth(new Date())),
+    end: adapter.endOfDay(adapter.endOfMonth(new Date())),
+  });
+
+  const weeksInMonth = adapter.getWeekArray(adapter.date(state.today));
+  const days = weeksInMonth.flat();
+  const daysInMonth = genDays(days, state.today);
+  state.daysList = daysInMonth;
+});
+
+function eventHandle(day) {
+  return events.filter(
+    (e) =>
+      adapter.isSameDay(day.date, e.start) || adapter.isSameDay(day.date, e.end)
+  );
+}
+
+const weekDays = computed(() => {
+  return [0, 1, 2, 3, 4, 5, 6].map((day) => (day + 0) % 7);
+});
+
+function genDays(days, today) {
+  return days
+    .filter((date) => {
+      return weekDays.value.includes(adapter.toJsDate(date).getDay());
+    })
+    .map((date, index) => {
+      const isoDate = adapter.toISO(date);
+      const isAdjacent = !adapter.isSameMonth(date, today);
+      const isStart = adapter.isSameDay(date, adapter.startOfMonth(today));
+      const isEnd = adapter.isSameDay(date, adapter.endOfMonth(today));
+      const isSame = adapter.isSameDay(date, today);
+      const isBefore = adapter.isBefore(date, today);
+      const isToday = adapter.isSameDay(date, today);
+
+      return {
+        date,
+        isoDate,
+        formatted: adapter.format(date, "keyboardDate"),
+        year: adapter.getYear(date),
+        month: adapter.getMonth(date),
+        isDisabled: isBefore && !isToday,
+        isWeekStart: index % 7 === 0,
+        isWeekEnd: index % 7 === 6,
+        isToday,
+        isAdjacent,
+        isHidden: false,
+        isStart,
+        isSelected: true,
+        isEnd,
+        isSame,
+        localized: adapter.format(date, "dayOfMonth"),
+      };
+    });
+}
+
+function fetchEvents({ start, end }) {
+  const _events = [];
+  const min = start.getTime();
+  const max = end.getTime();
+  const days = (max - min) / 86400000;
+  const eventCount = rnd(days, days + 70);
+
+  for (let i = 0; i < eventCount; i++) {
+    const allDay = rnd(0, 3) === 0;
+    const firstTimestamp = rnd(min, max);
+    const first = new Date(firstTimestamp - (firstTimestamp % 900000));
+    const secondTimestamp = rnd(2, allDay ? 288 : 8) * 900000;
+    const second = new Date(first.getTime() + secondTimestamp);
+
+    _events.push({
+      title: names[rnd(0, names.length - 1)],
+      start: first,
+      end: second,
+      color: colors[rnd(0, colors.length - 1)],
+      allDay,
+    });
+  }
+  events = _events;
+}
+
+function previousMonth(date) {
+  const currentMonth = adapter.getMonth(date);
+  state.today = adapter.setMonth(state.today, currentMonth - 1);
+}
+
+function nextMonth(date) {
+  const currentMonth = adapter.getMonth(date);
+  state.today = adapter.setMonth(state.today, currentMonth + 1);
+}
+
+function rnd(a, b) {
+  return Math.floor((b - a + 1) * Math.random()) + a;
+}
 </script>
 
 <style lang="scss">
 .calendar {
-  width: 100%;
+  padding: 12px;
+  &__footer {
+    margin: 10px 0;
+  }
 }
 </style>

@@ -1,0 +1,19 @@
+$calendar-border-radius: 16px;
+$calendar-border-color: black;
+$calendar-today-bg: black;
+$calendar-today-color: white;
+$calendar-disabled-color: gray;
+$calendar-sunday-color: red;
+$calendar-saturday-color: blue;
+
+@mixin calendar-container {
+  border-radius: 30px;
+}
+
+@mixin calendar-day-base {
+  border: 1px solid $calendar-border-color;
+  
+  &:nth-last-child(-n + 7) {
+    border-bottom: none;
+  }
+}

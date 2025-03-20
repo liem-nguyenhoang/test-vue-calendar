@@ -1,50 +1,112 @@
 <template>
   <div class="calendar-header">
-    <div
-      v-for="(day, index) in weekdays"
-      :key="index"
-      class="calendar-header__day"
-      :class="{
-        'calendar-header__day--sunday': index === 0,
-        'calendar-header__day--saturday': index === 6,
-      }"
-    >
-      {{ day }}
+    <div class="calendar-header__date-time">
+      <v-btn
+        icon
+        flat
+        base-color="black"
+        width="24"
+        height="24"
+        @click="$emit('previous-month', currentDate)"
+        class="nav-btn"
+      >
+        <v-icon size="small">mdi-chevron-left</v-icon>
+      </v-btn>
+      <v-btn
+        icon
+        flat
+        base-color="black"
+        width="24"
+        height="24"
+        @click="$emit('next-month', currentDate)"
+        class="nav-btn"
+      >
+        <v-icon size="small">mdi-chevron-right</v-icon>
+      </v-btn>
+      <p class="date-text">
+        {{ formatJPDate(currentDate) }}
+      </p>
     </div>
+    <!-- Location -->
+    <div class="calendar-header__location">
+      <select class="option">
+        <option selected>東京ドームシティ駐車場</option>
+      </select>
+    </div>
+
+    <!-- Add scheduler -->
+    <button class="calendar-header__add-schedule">
+      <span class="icon">+</span>
+      <span class="text">定型スケジュール</span>
+    </button>
   </div>
 </template>
 
 <script setup>
-// Japanese weekday labels
-const weekdays = ["日", "月", "火", "水", "木", "金", "土"];
+import { defineProps, defineEmits } from "vue";
+import { useDate } from "vuetify";
+
+const adapter = useDate();
+
+defineProps({
+  currentDate: {
+    type: Object,
+    required: true,
+  },
+});
+
+defineEmits(["previous-month", "next-month"]);
+
+function formatJPDate(date) {
+  const year = adapter.getYear(date);
+  const month = adapter.getMonth(date) + 1; // Months are zero-based
+  return `${year}年${month}月`;
+}
 </script>
 
 <style lang="scss">
 .calendar-header {
   display: flex;
-  width: 100%;
-  max-height: 30px;
+  align-items: center;
+  justify-content: space-between;
 
-  &__day {
-    flex: 1;
-    padding: 5px;
-    text-align: center;
-    font-weight: bold;
-    line-height: 20px;
+  &__date-time {
+    display: flex;
+    gap: 8px;
 
-    &--sunday {
-      color: #e53935;
-    }
-
-    &--saturday {
-      color: #1976d2;
+    & .date-text {
+      margin-left: 8px;
     }
   }
 
-  @media screen and (max-width: 480px) {
-    &__day {
-      font-size: 12px;
-      padding: 5px;
+  &__location {
+    flex-grow: 1;
+    max-width: 440px;
+    & .option {
+      width: 100%;
+      padding: 8px 12px;
+      border-radius: 16px;
+      border: 1px solid #e0e0e0;
+      background-color: #yellow;
+      font-size: 14px;
+      padding-right: 32px;
+    }
+  }
+
+  &__add-schedule {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    background-color: #f5f5f5;
+    border: none;
+    border-radius: 16px;
+    cursor: pointer;
+    font-size: 14px;
+    margin-left: 16px;
+
+    & .icon {
+      font-weight: bold;
     }
   }
 }

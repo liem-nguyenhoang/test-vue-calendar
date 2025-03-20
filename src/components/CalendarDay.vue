@@ -1,39 +1,63 @@
 <template>
-  <div
+  <v-calendar-month-day
+    :day="day"
+    :title="title"
+    :events="events"
+    :disabled="day.isDisabled"
     class="calendar-day"
     :class="{
-      'calendar-day--sunday': isSunday,
-      'calendar-day--saturday': isSaturday,
-      'calendar-day--today': day.isToday,
-      'calendar-day--selected': day.isSelected,
-      'calendar-day--other-month': !day.isCurrentMonth,
+      'calendar-day--weekend-start': day.isWeekStart,
+      'calendar-day--weekend-end': day.isWeekEnd,
+      'calendar-day--sunday': day.isWeekStart,
+      'calendar-day--saturday': day.isWeekEnd,
     }"
   >
-    <div
-      class="calendar-day__number"
-      :class="{
-        'calendar-day__number--red': isSunday,
-        'calendar-day__number--blue': isSaturday && !isSunday,
-      }"
-    >
-      {{ day.date.getDate() }}
-    </div>
+    <template #title="{ title }">
+      <div
+        class="calendar-day__title"
+        :class="{
+          'calendar-day__title--disabled': day.isDisabled,
+          'calendar-day__title--today': day.isToday,
+        }"
+      >
+        <p>{{ title }}</p>
+      </div>
+    </template>
 
-    <CalendarEvent
-      v-for="(event, index) in events"
-      :key="index"
-      :event="event"
-    />
-  </div>
+    <template #content>
+      <!-- Day events -->
+      <div class="calendar-day__content">
+        <template v-if="events.length > 0">
+          <!-- All Day Events -->
+          <calendar-event
+            v-for="(event, index) in allDayEvents"
+            :key="`all-day-${index}`"
+            :event="event"
+          />
+
+          <!-- Regular Events -->
+          <calendar-event
+            v-for="(event, index) in regularEvents"
+            :key="`regular-${index}`"
+            :event="event"
+          />
+        </template>
+      </div>
+    </template>
+  </v-calendar-month-day>
 </template>
 
 <script setup>
-import { defineProps, computed } from "vue";
+import { computed } from "vue";
 import CalendarEvent from "./CalendarEvent.vue";
 
 const props = defineProps({
   day: {
     type: Object,
+    required: true,
+  },
+  title: {
+    type: String,
     required: true,
   },
   events: {
@@ -42,94 +66,82 @@ const props = defineProps({
   },
 });
 
-const isSunday = computed(() => props.day.date.getDay() === 0);
-const isSaturday = computed(() => props.day.date.getDay() === 6);
+const allDayEvents = computed(() => {
+  return props.events.filter((e) => e.allDay);
+});
+
+const regularEvents = computed(() => {
+  return props.events.filter((e) => !e.allDay);
+});
 </script>
 
 <style lang="scss">
 .calendar-day {
   position: relative;
-  border-right: 1px solid #e0e0e0;
-  border-bottom: 1px solid #e0e0e0;
-  box-sizing: border-box;
 
-  &:nth-child(7n) {
-    border-right: none;
+  &--sunday p {
+    color: red;
   }
 
-  &__number {
-    font-size: 14px;
-    font-weight: 500;
-
-    &--red {
-      color: #e53935;
-    }
-
-    &--blue {
-      color: #1976d2;
-    }
+  &--saturday p {
+    color: blue;
   }
 
-  &--sunday {
-    background-color: #fff8f8;
+  &:nth-last-child(-n + 7) {
+    border-bottom: none;
   }
 
-  &--saturday {
-    background-color: #f8f9ff;
-  }
+  &__title {
+    height: 32px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
 
-  &--today {
-    background-color: #333;
-    color: white;
-
-    .calendar-day__number {
-      background-color: #333;
-      color: white;
-      border-radius: 50%;
+    p {
       width: 24px;
       height: 24px;
+      border-radius: 12px;
       display: flex;
-      align-items: center;
       justify-content: center;
-      left: 5px;
-      top: 5px;
-    }
-  }
-
-  &--selected {
-    position: relative;
-
-    &::before {
-      content: "✕";
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      font-size: 24px;
-      color: white;
-      background-color: #666;
-      width: 30px;
-      height: 30px;
-      border-radius: 50%;
-      display: flex;
       align-items: center;
-      justify-content: center;
-      z-index: 1;
+    }
+
+    &--disabled {
+      p {
+        background-color: white;
+        color: gray;
+      }
+    }
+
+    &--today {
+      p {
+        background-color: black;
+        color: white;
+      }
     }
   }
 
-  &--other-month {
-    .calendar-day__number {
-      color: #bbbbbb;
-    }
+  &__content {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
   }
 
-  @media screen and (max-width: 768px) {
-    &__number {
-      font-size: 12px;
-      top: 3px;
-      left: 5px;
+  &__events {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  &__event {
+    width: 100%;
+
+    &--all-day {
+      // Specific styles for all-day events
     }
+  }
+  &:nth-child(7n) {
+    border-right: none;
   }
 }
 </style>

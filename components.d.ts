@@ -21,7 +21,12 @@ declare module 'vue' {
     H5: typeof import('./src/components/H5.vue')['default']
     H6: typeof import('./src/components/H6.vue')['default']
     HelloWorld: typeof import('./src/components/HelloWorld.vue')['default']
+    ParkingDateSelector: typeof import('./src/components/ParkingDateSelector.vue')['default']
+    ParkingHeader: typeof import('./src/components/ParkingHeader.vue')['default']
+    ParkingTimeInfo: typeof import('./src/components/ParkingTimeInfo.vue')['default']
+    ParkingTimeSelector: typeof import('./src/components/ParkingTimeSelector.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
+    TimeSlot: typeof import('./src/components/TimeSlot.vue')['default']
   }
 }

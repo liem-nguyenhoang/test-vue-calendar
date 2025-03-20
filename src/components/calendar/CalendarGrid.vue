@@ -2,14 +2,8 @@
   <div class="calendar-grid">
     <calendar-weekdays />
     <div class="calendar-grid__days days__7">
-      <template v-for="week in chunkArray(daysList, 7)">
-        <calendar-day
-          v-for="day in week"
-          :key="day.isoDate"
-          :day="day"
-          :title="getTitle(day)"
-          :events="eventHandler(day)"
-        />
+      <template v-for="week in chunkArray()">
+        <calendar-day v-for="day in week" :key="day.day" :day="day" />
       </template>
     </div>
   </div>
@@ -17,31 +11,22 @@
 
 <script setup>
 import { defineProps } from "vue";
-import { useDate } from "vuetify";
 import CalendarWeekdays from "./CalendarWeekdays.vue";
 import CalendarDay from "./CalendarDay.vue";
 
-const adapter = useDate();
-
-defineProps({
+const props = defineProps({
   daysList: {
     type: Array,
     required: true,
   },
-  eventHandler: {
-    type: Function,
-    required: true,
-  },
 });
 
-function chunkArray(array, size = 1) {
-  return Array.from({ length: Math.ceil(array.length / size) }, (v, i) =>
-    array.slice(i * size, i * size + size)
+function chunkArray() {
+  const { daysList } = props;
+  const size = 7;
+  return Array.from({ length: Math.ceil(daysList.length / size) }, (v, i) =>
+    daysList.slice(i * size, i * size + size)
   );
-}
-
-function getTitle(day) {
-  return day ? adapter.format(day.date, "dayOfMonth") : "NaN";
 }
 </script>
 

@@ -1,12 +1,10 @@
 <template>
   <v-calendar-month-day
     :day="day"
-    :title="title"
-    :events="events"
+    :title="getTitle()"
+    :events="day.events"
     class="calendar-day"
     :class="{
-      'calendar-day--weekend-start': day.isWeekStart,
-      'calendar-day--weekend-end': day.isWeekEnd,
       'calendar-day--sunday': day.isWeekStart,
       'calendar-day--saturday': day.isWeekEnd,
       'calendar-day--disabled': day.isDisabled,
@@ -25,23 +23,16 @@
     </template>
 
     <template #content>
-      <!-- Day events -->
       <div class="calendar-day__content">
-        <template v-if="events.length > 0">
-          <!-- All Day Events -->
+        <template v-if="day.events.length > 0">
           <calendar-event
-            v-for="(event, index) in allDayEvents"
+            v-for="(event, index) in day.events"
             :key="`all-day-${index}`"
             :event="event"
-            :isDisabled="day.isDisabled"
-          />
-
-          <!-- Regular Events -->
-          <calendar-event
-            v-for="(event, index) in regularEvents"
-            :key="`regular-${index}`"
-            :event="event"
-            :isDisabled="day.isDisabled"
+            :is-disabled="day.isDisabled"
+            :is-active="day.isActive"
+            :is-normal="day.isNormal"
+            :is-cancel="day.isCancel"
           />
         </template>
       </div>
@@ -50,31 +41,20 @@
 </template>
 
 <script setup>
-import { computed } from "vue";
 import CalendarEvent from "./CalendarEvent.vue";
+import moment from "moment";
 
 const props = defineProps({
   day: {
     type: Object,
     required: true,
   },
-  title: {
-    type: String,
-    required: true,
-  },
-  events: {
-    type: Array,
-    default: () => [],
-  },
 });
 
-const allDayEvents = computed(() => {
-  return props.events.filter((e) => e.allDay);
-});
-
-const regularEvents = computed(() => {
-  return props.events.filter((e) => !e.allDay);
-});
+function getTitle() {
+  const { day } = props.day;
+  return day ? moment(day).get("date") : "NaN";
+}
 </script>
 
 <style lang="scss">

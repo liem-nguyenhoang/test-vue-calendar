@@ -1,22 +1,27 @@
-<!-- components/CalendarEvent.vue -->
 <template>
   <div
     class="calendar-event"
     :class="{
       'calendar-event--disabled': isDisabled,
-      'calendar-event--active': event.allDay,
+      'calendar-event--active': isActive,
     }"
   >
     <div
       class="calendar-event__dot"
-      :style="{ backgroundColor: isDisabled ? '#9e9e9e' : event.color }"
-    ></div>
+      :class="{
+        'calendar-event__dot--disabled': isDisabled,
+        'calendar-event__dot--normal': isNormal,
+        'calendar-event__dot--cancel': isCancel,
+      }"
+    />
     <div class="calendar-event__text">
       <div class="calendar-event__text--start">
-        10:00
+        {{ convertTime(event.lend_start_time) }}
         <div>-</div>
       </div>
-      <div class="calendar-event__text--end">12:00</div>
+      <div class="calendar-event__text--end">
+        {{ convertTime(event.lend_end_time) }}
+      </div>
     </div>
   </div>
 </template>
@@ -31,7 +36,25 @@ defineProps({
     type: Boolean,
     default: false,
   },
+  isActive: {
+    type: Boolean,
+    default: false,
+  },
+  isNormal: {
+    type: Boolean,
+    default: false,
+  },
+  isCancel: {
+    type: Boolean,
+    default: false,
+  },
 });
+
+function convertTime(timeString: string) {
+  const hours = timeString.slice(0, 2);
+  const minutes = timeString.slice(2, 4);
+  return `${hours}:${minutes}`;
+}
 </script>
 
 <style lang="scss">
@@ -50,6 +73,16 @@ defineProps({
     border-radius: 50%;
     flex-shrink: 0;
     margin-right: 4px;
+
+    &--disabled {
+      background-color: #9e9e9e;
+    }
+    &--normal {
+      background-color: #2d89cd;
+    }
+    &--cancel {
+      background-color: #ec1303;
+    }
   }
 
   &__text {

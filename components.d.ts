@@ -10,7 +10,6 @@ declare module 'vue' {
     Calendar: typeof import('./src/components/calendar/Calendar.vue')['default']
     CalendarDay: typeof import('./src/components/calendar/CalendarDay.vue')['default']
     CalendarEvent: typeof import('./src/components/calendar/CalendarEvent.vue')['default']
-    CalendarEventItem: typeof import('./src/components/CalendarEventItem.vue')['default']
     CalendarGrid: typeof import('./src/components/calendar/CalendarGrid.vue')['default']
     CalendarHeader: typeof import('./src/components/calendar/CalendarHeader.vue')['default']
     CalendarWeekdays: typeof import('./src/components/calendar/CalendarWeekdays.vue')['default']

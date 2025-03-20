@@ -5,37 +5,18 @@
       @previous-month="previousMonth"
       @next-month="nextMonth"
     />
-    <calendar-grid :days-list="state.daysList" :event-handler="eventHandle" />
-    <div class="calendar__footer">line space</div>
+    <calendar-grid :days-list="state.daysList" />
   </div>
 </template>
 
 <script setup>
-import { onMounted, computed, reactive, watch } from "vue";
+import { onMounted, reactive, watch } from "vue";
 import { useDate } from "vuetify";
 import CalendarHeader from "./CalendarHeader.vue";
 import CalendarGrid from "./CalendarGrid.vue";
+import data_mock from "./data_mock.js";
+import moment from "moment";
 
-let events = [];
-const colors = [
-  "#2196F3",
-  "#3F51B5",
-  "#673AB7",
-  "#00BCD4",
-  "#4CAF50",
-  "#FF9800",
-  "#757575",
-];
-const names = [
-  "Meeting",
-  "Holiday",
-  "PTO",
-  "Travel",
-  "Event",
-  "Birthday",
-  "Conference",
-  "Party",
-];
 const adapter = useDate();
 
 const state = reactive({
@@ -46,96 +27,69 @@ const state = reactive({
 watch(
   () => state.today,
   (newVal) => {
-    const weeksInMonth = adapter.getWeekArray(adapter.date(newVal));
+    const weeksInMonth = adapter.getWeekArray(newVal);
     const days = weeksInMonth.flat();
-    const daysInMonth = genDays(days, newVal);
-    state.daysList = daysInMonth;
+    const parkingData = data_mock;
+    const result = processParkingDataWithArray(parkingData, days);
+    state.daysList = result;
   }
 );
 
-onMounted(() => {
-  fetchEvents({
-    start: adapter.startOfDay(adapter.startOfMonth(new Date())),
-    end: adapter.endOfDay(adapter.endOfMonth(new Date())),
-  });
+// Function to create maps from the provided date array
+function createDateMapsFromArray(dateArray) {
+  const dateMap = new Map();
 
-  const weeksInMonth = adapter.getWeekArray(adapter.date(state.today));
-  const days = weeksInMonth.flat();
-  const daysInMonth = genDays(days, state.today);
-  state.daysList = daysInMonth;
-});
-
-function eventHandle(day) {
-  return events.filter(
-    (e) =>
-      adapter.isSameDay(day.date, e.start) || adapter.isSameDay(day.date, e.end)
-  );
-}
-
-const weekDays = computed(() => {
-  return [0, 1, 2, 3, 4, 5, 6].map((day) => (day + 0) % 7);
-});
-
-function genDays(days, today) {
-  return days
-    .filter((date) => {
-      return weekDays.value.includes(adapter.toJsDate(date).getDay());
-    })
-    .map((date, index) => {
-      const isoDate = adapter.toISO(date);
-      const isAdjacent = !adapter.isSameMonth(date, today);
-      const isStart = adapter.isSameDay(date, adapter.startOfMonth(today));
-      const isEnd = adapter.isSameDay(date, adapter.endOfMonth(today));
-      const isSame = adapter.isSameDay(date, today);
-      const isBefore = adapter.isBefore(date, today);
-      const isToday = adapter.isSameDay(date, today);
-
-      return {
-        date,
-        isoDate,
-        formatted: adapter.format(date, "keyboardDate"),
-        year: adapter.getYear(date),
-        month: adapter.getMonth(date),
-        isDisabled: isBefore && !isToday,
-        isWeekStart: index % 7 === 0,
-        isWeekEnd: index % 7 === 6,
-        isToday,
-        isAdjacent,
-        isHidden: false,
-        isStart,
-        isSelected: true,
-        isEnd,
-        isSame,
-        localized: adapter.format(date, "dayOfMonth"),
-      };
-    });
-}
-
-function fetchEvents({ start, end }) {
-  const _events = [];
-  const min = start.getTime();
-  const max = end.getTime();
-  const days = (max - min) / 86400000;
-  const eventCount = rnd(days, days + 70);
-
-  for (let i = 0; i < eventCount; i++) {
-    const allDay = rnd(1, 3) === 2;
-    const firstTimestamp = rnd(min, max);
-    const first = new Date(firstTimestamp - (firstTimestamp % 900000));
-    const secondTimestamp = rnd(2, allDay ? 288 : 8) * 900000;
-    const second = new Date(first.getTime() + secondTimestamp);
-
-    _events.push({
-      title: names[rnd(0, names.length - 1)],
-      start: first,
-      end: second,
-      color: colors[rnd(0, colors.length - 1)],
-      allDay,
-    });
+  for (const date of dateArray) {
+    const yyyymmdd = moment(date).format("YYYYMMDD");
+    dateMap.set(yyyymmdd, []);
   }
-  _events.map((val) => console.log("_events", val.allDay));
-  events = _events;
+
+  return dateMap;
 }
+
+// Main processing function
+function processParkingDataWithArray(data, dateArray) {
+  // Create date maps from the provided array
+  const dateMap = createDateMapsFromArray(dateArray);
+  // Single pass through the data to bucket records
+  for (const record of data.lend_list) {
+    const lendDate = record.lend_date;
+    if (dateMap.has(lendDate)) {
+      dateMap.get(lendDate).push(record);
+    }
+  }
+  // Convert Map to required array format using original order
+  const result = dateArray.map((date, index) => {
+    const yyyymmdd = moment(date).format("YYYYMMDD");
+    const records = dateMap.get(yyyymmdd);
+    const isToday = moment(date).isSame(moment(), "day");
+    const isDisabled = moment(date).isBefore(moment(), "day");
+    const isActive = rnd(1, 4) === 2;
+    const isNormal = !isActive && rnd(1, 4) === 2;
+    const isCancel = !isActive && rnd(1, 4) === 2;
+
+    return {
+      day: date,
+      isDisabled,
+      isToday,
+      isActive,
+      isNormal,
+      isCancel,
+      isWeekStart: index % 7 === 0,
+      isWeekEnd: index % 7 === 6,
+      events: records.length > 0 ? records : [],
+    };
+  });
+  return result;
+}
+
+onMounted(() => {
+  const weeksInMonth = adapter.getWeekArray(state.today);
+  const days = weeksInMonth.flat();
+  const parkingData = data_mock;
+  const result = processParkingDataWithArray(parkingData, days);
+  state.daysList = result;
+});
 
 function previousMonth(date) {
   const currentMonth = adapter.getMonth(date);

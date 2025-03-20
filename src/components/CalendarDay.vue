@@ -1,50 +1,46 @@
+<!-- components/CalendarDay.vue -->
 <template>
-  <v-calendar-month-day
-    :day="day"
-    :title="title"
-    :events="events"
-    :disabled="day.isDisabled"
+  <div
     class="calendar-day"
     :class="{
-      'calendar-day--weekend-start': day.isWeekStart,
-      'calendar-day--weekend-end': day.isWeekEnd,
       'calendar-day--sunday': day.isWeekStart,
       'calendar-day--saturday': day.isWeekEnd,
+      'calendar-day--disabled': day.isDisabled,
+      'calendar-day--adjacent': day.isAdjacent,
     }"
+    @click="$emit('click', day)"
   >
-    <template #title="{ title }">
+    <!-- Day number -->
+    <div class="calendar-day__header">
       <div
-        class="calendar-day__title"
-        :class="{
-          'calendar-day__title--disabled': day.isDisabled,
-          'calendar-day__title--today': day.isToday,
-        }"
+        class="calendar-day__number"
+        :class="{ 'calendar-day__number--today': day.isToday }"
       >
-        <p>{{ title }}</p>
+        {{ title }}
       </div>
-    </template>
+    </div>
 
-    <template #content>
-      <!-- Day events -->
-      <div class="calendar-day__content">
-        <template v-if="events.length > 0">
-          <!-- All Day Events -->
-          <calendar-event
-            v-for="(event, index) in allDayEvents"
-            :key="`all-day-${index}`"
-            :event="event"
-          />
+    <!-- Day events -->
+    <div class="calendar-day__content">
+      <template v-if="events.length > 0">
+        <!-- All Day Events -->
+        <calendar-event
+          v-for="(event, index) in allDayEvents"
+          :key="`all-day-${index}`"
+          :event="event"
+          @click.stop="$emit('event-click', event, day)"
+        />
 
-          <!-- Regular Events -->
-          <calendar-event
-            v-for="(event, index) in regularEvents"
-            :key="`regular-${index}`"
-            :event="event"
-          />
-        </template>
-      </div>
-    </template>
-  </v-calendar-month-day>
+        <!-- Regular Events -->
+        <calendar-event
+          v-for="(event, index) in regularEvents"
+          :key="`regular-${index}`"
+          :event="event"
+          @click.stop="$emit('event-click', event, day)"
+        />
+      </template>
+    </div>
+  </div>
 </template>
 
 <script setup>
@@ -66,6 +62,8 @@ const props = defineProps({
   },
 });
 
+const emit = defineEmits(["click", "event-click"]);
+
 const allDayEvents = computed(() => {
   return props.events.filter((e) => e.allDay);
 });
@@ -77,47 +75,31 @@ const regularEvents = computed(() => {
 
 <style lang="scss">
 .calendar-day {
-  position: relative;
+  min-height: 80px;
+  border: 1px solid #e0e0e0;
+  padding: 4px;
+  cursor: pointer;
 
-  &--sunday p {
-    color: red;
+  &:hover {
+    background-color: rgba(0, 0, 0, 0.02);
   }
 
-  &--saturday p {
-    color: blue;
+  &__header {
+    text-align: center;
+    margin-bottom: 4px;
   }
 
-  &:nth-last-child(-n + 7) {
-    border-bottom: none;
-  }
-
-  &__title {
-    height: 32px;
-    display: flex;
+  &__number {
+    display: inline-flex;
     justify-content: center;
     align-items: center;
-
-    p {
-      width: 24px;
-      height: 24px;
-      border-radius: 12px;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-    }
-
-    &--disabled {
-      p {
-        background-color: white;
-        color: gray;
-      }
-    }
+    width: 24px;
+    height: 24px;
+    border-radius: 12px;
 
     &--today {
-      p {
-        background-color: black;
-        color: white;
-      }
+      background-color: black;
+      color: white;
     }
   }
 
@@ -127,21 +109,29 @@ const regularEvents = computed(() => {
     gap: 2px;
   }
 
-  &__events {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-  }
+  &--disabled {
+    background-color: #f5f5f5;
+    cursor: not-allowed;
 
-  &__event {
-    width: 100%;
-
-    &--all-day {
-      // Specific styles for all-day events
+    .calendar-day__number {
+      color: #9e9e9e;
     }
   }
-  &:nth-child(7n) {
-    border-right: none;
+
+  &--sunday {
+    .calendar-day__number {
+      color: red;
+    }
+  }
+
+  &--saturday {
+    .calendar-day__number {
+      color: blue;
+    }
+  }
+
+  &--adjacent {
+    background-color: #f5f5f5;
   }
 }
 </style>

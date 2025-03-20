@@ -1,72 +1,210 @@
+<!-- Calendar.vue - Main Component with API integration -->
 <template>
   <div class="calendar">
+    <!-- Loading overlay -->
+    <div v-if="state.loading" class="calendar__loading">
+      <v-progress-circular indeterminate color="primary"></v-progress-circular>
+    </div>
+
+    <!-- Header -->
     <calendar-header
       :current-date="state.today"
       @previous-month="previousMonth"
       @next-month="nextMonth"
     />
-    <calendar-grid :days-list="state.daysList" :event-handler="eventHandle" />
-    <div class="calendar__footer">line space</div>
+
+    <!-- Calendar Body -->
+    <div class="calendar__container">
+      <calendar-weekdays />
+
+      <div class="calendar__days-grid">
+        <template
+          v-for="week in chunkArray(state.daysList, 7)"
+          :key="week[0].isoDate"
+        >
+          <calendar-day
+            v-for="day in week"
+            :key="day.isoDate"
+            :day="day"
+            :title="getTitle(day)"
+            :events="eventHandle(day)"
+            @click="handleDayClick(day)"
+          />
+        </template>
+      </div>
+
+      <!-- Error message -->
+      <div v-if="state.error" class="calendar__error">
+        {{ state.error }}
+        <v-btn text small @click="loadEvents">Retry</v-btn>
+      </div>
+    </div>
+
+    <!-- Event Dialog (optional) -->
+    <calendar-event-dialog
+      v-if="state.showEventDialog"
+      v-model="state.showEventDialog"
+      :event="state.selectedEvent"
+      :date="state.selectedDate"
+      @save="saveEvent"
+      @delete="deleteEvent"
+      @close="closeEventDialog"
+    />
   </div>
 </template>
 
 <script setup>
 import { onMounted, computed, reactive, watch } from "vue";
 import { useDate } from "vuetify";
-import CalendarHeader from "./CalendarHeader.vue";
-import CalendarGrid from "./CalendarGrid.vue";
+import { calendarService } from "../services/calendarApi";
+import CalendarHeader from "./components/CalendarHeader.vue";
+import CalendarWeekdays from "./components/CalendarWeekdays.vue";
+import CalendarDay from "./components/CalendarDay.vue";
+import CalendarEventDialog from "./components/CalendarEventDialog.vue";
 
-let events = [];
-const colors = [
-  "#2196F3",
-  "#3F51B5",
-  "#673AB7",
-  "#00BCD4",
-  "#4CAF50",
-  "#FF9800",
-  "#757575",
-];
-const names = [
-  "Meeting",
-  "Holiday",
-  "PTO",
-  "Travel",
-  "Event",
-  "Birthday",
-  "Conference",
-  "Party",
-];
 const adapter = useDate();
 
 const state = reactive({
   today: adapter.date(),
   daysList: [],
+  events: [],
+  loading: false,
+  error: null,
+  showEventDialog: false,
+  selectedEvent: null,
+  selectedDate: null,
 });
 
+// Watch for date changes and update days list and events
 watch(
   () => state.today,
   (newVal) => {
-    const weeksInMonth = adapter.getWeekArray(adapter.date(newVal));
-    const days = weeksInMonth.flat();
-    const daysInMonth = genDays(days, newVal);
-    state.daysList = daysInMonth;
+    updateDaysList(newVal);
+    loadEvents();
   }
 );
 
 onMounted(() => {
-  fetchEvents({
-    start: adapter.startOfDay(adapter.startOfMonth(new Date())),
-    end: adapter.endOfDay(adapter.endOfMonth(new Date())),
-  });
-
-  const weeksInMonth = adapter.getWeekArray(adapter.date(state.today));
-  const days = weeksInMonth.flat();
-  const daysInMonth = genDays(days, state.today);
-  state.daysList = daysInMonth;
+  updateDaysList(state.today);
+  loadEvents();
 });
 
+/**
+ * Load events from API for the current month
+ */
+async function loadEvents() {
+  state.loading = true;
+  state.error = null;
+
+  try {
+    const startDate = adapter.startOfDay(adapter.startOfMonth(state.today));
+    const endDate = adapter.endOfDay(adapter.endOfMonth(state.today));
+
+    // Add buffer days to include events from adjacent months that might be visible
+    const bufferedStartDate = adapter.addDays(startDate, -7);
+    const bufferedEndDate = adapter.addDays(endDate, 7);
+
+    state.events = await calendarService.fetchEvents(
+      bufferedStartDate,
+      bufferedEndDate
+    );
+  } catch (error) {
+    state.error = "Failed to load events. Please try again.";
+    console.error("Error loading events:", error);
+  } finally {
+    state.loading = false;
+  }
+}
+
+/**
+ * Handle day click event
+ * @param {Object} day - The day object that was clicked
+ */
+function handleDayClick(day) {
+  if (day.isDisabled) return;
+
+  state.selectedDate = day.date;
+  state.selectedEvent = null;
+  state.showEventDialog = true;
+}
+
+/**
+ * Handle event click
+ * @param {Object} event - The event that was clicked
+ * @param {Object} day - The day containing the event
+ */
+function handleEventClick(event, day) {
+  state.selectedEvent = event;
+  state.selectedDate = day.date;
+  state.showEventDialog = true;
+}
+
+/**
+ * Close the event dialog
+ */
+function closeEventDialog() {
+  state.showEventDialog = false;
+  state.selectedEvent = null;
+  state.selectedDate = null;
+}
+
+/**
+ * Save a new or updated event
+ * @param {Object} eventData - The event data to save
+ */
+async function saveEvent(eventData) {
+  state.loading = true;
+
+  try {
+    if (eventData.id) {
+      // Update existing event
+      await calendarService.updateEvent(eventData.id, eventData);
+    } else {
+      // Create new event
+      await calendarService.createEvent(eventData);
+    }
+
+    // Reload events to reflect changes
+    await loadEvents();
+    closeEventDialog();
+  } catch (error) {
+    console.error("Error saving event:", error);
+    // You might want to display an error message
+  } finally {
+    state.loading = false;
+  }
+}
+
+/**
+ * Delete an event
+ * @param {string} eventId - The ID of the event to delete
+ */
+async function deleteEvent(eventId) {
+  if (!eventId) return;
+
+  state.loading = true;
+
+  try {
+    await calendarService.deleteEvent(eventId);
+    await loadEvents();
+    closeEventDialog();
+  } catch (error) {
+    console.error("Error deleting event:", error);
+    // You might want to display an error message
+  } finally {
+    state.loading = false;
+  }
+}
+
+function updateDaysList(date) {
+  const weeksInMonth = adapter.getWeekArray(adapter.date(date));
+  const days = weeksInMonth.flat();
+  const daysInMonth = genDays(days, date);
+  state.daysList = daysInMonth;
+}
+
 function eventHandle(day) {
-  return events.filter(
+  return state.events.filter(
     (e) =>
       adapter.isSameDay(day.date, e.start) || adapter.isSameDay(day.date, e.end)
   );
@@ -111,51 +249,62 @@ function genDays(days, today) {
     });
 }
 
-function fetchEvents({ start, end }) {
-  const _events = [];
-  const min = start.getTime();
-  const max = end.getTime();
-  const days = (max - min) / 86400000;
-  const eventCount = rnd(days, days + 70);
-
-  for (let i = 0; i < eventCount; i++) {
-    const allDay = rnd(0, 3) === 0;
-    const firstTimestamp = rnd(min, max);
-    const first = new Date(firstTimestamp - (firstTimestamp % 900000));
-    const secondTimestamp = rnd(2, allDay ? 288 : 8) * 900000;
-    const second = new Date(first.getTime() + secondTimestamp);
-
-    _events.push({
-      title: names[rnd(0, names.length - 1)],
-      start: first,
-      end: second,
-      color: colors[rnd(0, colors.length - 1)],
-      allDay,
-    });
-  }
-  events = _events;
+function chunkArray(array, size = 1) {
+  return Array.from({ length: Math.ceil(array.length / size) }, (_, i) =>
+    array.slice(i * size, i * size + size)
+  );
 }
 
-function previousMonth(date) {
-  const currentMonth = adapter.getMonth(date);
+function getTitle(day) {
+  return day ? adapter.format(day.date, "dayOfMonth") : "NaN";
+}
+
+function previousMonth() {
+  const currentMonth = adapter.getMonth(state.today);
   state.today = adapter.setMonth(state.today, currentMonth - 1);
 }
 
-function nextMonth(date) {
-  const currentMonth = adapter.getMonth(date);
+function nextMonth() {
+  const currentMonth = adapter.getMonth(state.today);
   state.today = adapter.setMonth(state.today, currentMonth + 1);
-}
-
-function rnd(a, b) {
-  return Math.floor((b - a + 1) * Math.random()) + a;
 }
 </script>
 
 <style lang="scss">
 .calendar {
-  padding: 12px;
-  &__footer {
-    margin: 10px 0;
+  position: relative;
+
+  &__container {
+    border-radius: 30px;
+  }
+
+  &__days-grid {
+    border: thin solid black;
+    border-radius: 16px;
+  }
+
+  &__loading {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(255, 255, 255, 0.7);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 10;
+  }
+
+  &__error {
+    margin: 16px;
+    padding: 12px;
+    color: #d32f2f;
+    background-color: #ffebee;
+    border-radius: 4px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
   }
 }
 </style>

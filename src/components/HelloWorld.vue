@@ -6,7 +6,7 @@
 </template>
 
 <script setup>
-import Calendar from "./Calendar.vue";
+import Calendar from "./calendar/Calendar.vue";
 </script>
 
 <style>

@@ -7,13 +7,13 @@ export {}
 /* prettier-ignore */
 declare module 'vue' {
   export interface GlobalComponents {
-    Calendar: typeof import('./src/components/Calendar.vue')['default']
-    CalendarDay: typeof import('./src/components/CalendarDay.vue')['default']
-    CalendarEvent: typeof import('./src/components/CalendarEvent.vue')['default']
+    Calendar: typeof import('./src/components/calendar/Calendar.vue')['default']
+    CalendarDay: typeof import('./src/components/calendar/CalendarDay.vue')['default']
+    CalendarEvent: typeof import('./src/components/calendar/CalendarEvent.vue')['default']
     CalendarEventItem: typeof import('./src/components/CalendarEventItem.vue')['default']
-    CalendarGrid: typeof import('./src/components/CalendarGrid.vue')['default']
-    CalendarHeader: typeof import('./src/components/CalendarHeader.vue')['default']
-    CalendarWeekdays: typeof import('./src/components/CalendarWeekdays.vue')['default']
+    CalendarGrid: typeof import('./src/components/calendar/CalendarGrid.vue')['default']
+    CalendarHeader: typeof import('./src/components/calendar/CalendarHeader.vue')['default']
+    CalendarWeekdays: typeof import('./src/components/calendar/CalendarWeekdays.vue')['default']
     H1: typeof import('./src/components/H1.vue')['default']
     H2: typeof import('./src/components/H2.vue')['default']
     H3: typeof import('./src/components/H3.vue')['default']

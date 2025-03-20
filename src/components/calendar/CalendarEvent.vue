@@ -49,6 +49,7 @@ defineProps({
     height: 6px;
     border-radius: 50%;
     flex-shrink: 0;
+    margin-right: 4px;
   }
 
   &__text {
@@ -93,6 +94,7 @@ defineProps({
     &__dot {
       width: 4px;
       height: 4px;
+      margin: 2px;
     }
 
     &--active:not(.calendar-event--disabled) {

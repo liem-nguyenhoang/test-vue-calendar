@@ -107,6 +107,7 @@ function formatJPDate(date) {
     gap: 8px;
 
     & .date-text {
+      min-width: 100px;
       font-size: 16px;
       margin-left: 8px;
       color: #1f1f1f;
@@ -118,12 +119,14 @@ function formatJPDate(date) {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    width: 440px;
+    // width: 440px;
+    width: 100%;
     min-width: 288px;
     padding: 8px 12px;
     border-radius: 16px;
     border: 1px solid #e0e0e0;
     font-size: 14px;
+    margin: 0 50px;
 
     & .option {
       width: 100%;
@@ -134,15 +137,14 @@ function formatJPDate(date) {
   &__add-schedule {
     display: flex;
     align-items: center;
-    padding: 8px 20px;
+    padding: 8px 10px;
     background-color: #f4f4f4;
     border: none;
     border-radius: 30px;
     cursor: pointer;
     font-size: 14px;
     gap: 4px;
-    width: 160px;
-
+    min-width: 140px;
     & .add-schedule {
       &-icon {
         color: #474747;
@@ -157,7 +159,7 @@ function formatJPDate(date) {
   }
 }
 
-@media (max-width: 800px) {
+@media (max-width: 768px) {
   .calendar-header-responsive {
     display: flex;
   }

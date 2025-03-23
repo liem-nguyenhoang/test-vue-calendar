@@ -15,6 +15,8 @@ declare module 'vue' {
     CalendarWeekdays: typeof import('./src/components/calendar/CalendarWeekdays.vue')['default']
     Check1: typeof import('./src/components/check1.vue')['default']
     Check2: typeof import('./src/components/calendar/check2.vue')['default']
+    Check3: typeof import('./src/components/check3.vue')['default']
+    Check4: typeof import('./src/components/check4.vue')['default']
     H1: typeof import('./src/components/H1.vue')['default']
     H2: typeof import('./src/components/H2.vue')['default']
     H3: typeof import('./src/components/H3.vue')['default']

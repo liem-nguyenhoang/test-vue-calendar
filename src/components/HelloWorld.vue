@@ -5,10 +5,14 @@
       :items="items"
       label="Chọn một mục"
       menu-class="custom-menu"
+      dessity="compact"
     >
-      <template #item="{ item, index }">
-        <div class="title">item: {{ item.title }}</div>
-        <div class="value">index: {{ item.props.value }}</div>
+      <template #item="{ props, item }">
+        <v-list-item v-bind="props" height="10" density="compact">
+          <template #title="{ title }">
+            <div class="title">{{ title }}</div>
+          </template>
+        </v-list-item>
       </template>
     </v-select>
   </v-container>
@@ -22,6 +26,18 @@ export default {
       items: ["Item 1", "Item 2", "Item 3", "Item 4"],
     };
   },
+  methods: {
+    getItemClass(item) {
+      // Tùy chỉnh class dựa trên giá trị của item
+      if (item === "Item 1") {
+        return "item-red";
+      } else if (item === "Item 2") {
+        return "item-blue";
+      } else {
+        return "item-default";
+      }
+    },
+  },
 };
 </script>
 
@@ -29,9 +45,8 @@ export default {
 .title {
   background-color: red;
   font-size: 8px;
-}
-.value {
-  background-color: blue;
-  font-size: 12px;
+  padding: 0;
+  margin: 0;
+  height: 12px;
 }
 </style>

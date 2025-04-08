@@ -1,29 +1,27 @@
 <template>
-  <Form @submit="onSubmit" v-slot="{ resetForm }">
+  <Form @submit="onSubmit" v-slot="{ errors: formErrors }">
     <div v-for="(item, index) in items" :key="index">
       <label :for="'fie_a_' + index">Field A {{ index + 1 }}:</label>
       <Field
         :id="'fie_a_' + index"
-        :name="`items[${index}].fie_a`"
         v-model="item.fie_a"
-        :rules="() => customRule(index, 'fie_a')"
+        :name="`items[${index}].fie_a`"
         placeholder="HH:mm"
-        @blur="resetErrors(resetForm)"
+        :rules="{ time_validation: [items[index].fie_b, 'fie_a'] }"
       />
-      <ErrorMessage :name="`items[${index}].fie_a`" class="error" />
+      <span class="error">{{ formErrors[`items[${index}].fie_a`] }}</span>
 
       <label :for="'fie_b_' + index">Field B {{ index + 1 }}:</label>
       <Field
         :id="'fie_b_' + index"
-        :name="`items[${index}].fie_b`"
         v-model="item.fie_b"
-        :rules="() => customRule(index, 'fie_b')"
+        :name="`items[${index}].fie_b`"
         placeholder="HH:mm"
-        @blur="resetErrors(resetForm)"
+        :rules="{ time_validation: [items[index].fie_a, 'fie_b'] }"
       />
-      <ErrorMessage :name="`items[${index}].fie_b`" class="error" />
+      <span class="error">{{ formErrors[`items[${index}].fie_b`] }}</span>
 
-      <button type="button" @click="remove(index, resetForm)">Xóa</button>
+      <button type="button" @click="remove(index)">Xóa</button>
     </div>
 
     <button type="button" @click="add()">Thêm item</button>
@@ -31,67 +29,81 @@
   </Form>
 </template>
 
-<script setup>
+<script lang="ts" setup>
 import { ref } from "vue";
-import { Form, Field, ErrorMessage } from "vee-validate";
+import { Form, Field, defineRule } from "vee-validate";
 
-// Danh sách items
-const items = ref([
+// Interface cho object trong mảng items
+interface FormItem {
+  fie_a: string;
+  fie_b: string;
+}
+
+// Type cho tham số của rule
+type TimeValidationParams = [string, "fie_a" | "fie_b"];
+
+// Định nghĩa rule với TypeScript
+defineRule<string, TimeValidationParams>(
+  "time_validation",
+  (
+    value: string,
+    [otherFieldValue, fieldName]: TimeValidationParams
+  ): string | true => {
+    const timeRegex = /^([01]\d|2[0-3]):([0-5]\d)$/;
+
+    const timeToMinutes = (time: string): number | null => {
+      if (!time) return null;
+      const [hours, minutes] = time.split(":").map(Number);
+      return hours * 60 + minutes;
+    };
+
+    // Kiểm tra bắt buộc nhập
+    if (!value) {
+      return `${fieldName === "fie_a" ? "Field A" : "Field B"} là bắt buộc`;
+    }
+
+    // Kiểm tra định dạng
+    if (!timeRegex.test(value)) {
+      return `${
+        fieldName === "fie_a" ? "Field A" : "Field B"
+      } phải có định dạng HH:mm (00:00-23:59)`;
+    }
+
+    // Kiểm tra fie_a <= fie_b (chỉ kiểm tra khi là fie_a)
+    if (fieldName === "fie_a" && value && otherFieldValue) {
+      const fieAMinutes = timeToMinutes(value);
+      const fieBMinutes = timeToMinutes(otherFieldValue);
+      if (
+        fieAMinutes !== null &&
+        fieBMinutes !== null &&
+        fieAMinutes > fieBMinutes
+      ) {
+        return "Field A phải nhỏ hơn hoặc bằng Field B";
+      }
+    }
+
+    return true;
+  }
+);
+
+// Khai báo mảng items với kiểu Ref<FormItem[]>
+const items = ref<FormItem[]>([
   { fie_a: "", fie_b: "" },
   { fie_a: "", fie_b: "" },
 ]);
 
-// Helper: Chuyển "HH:mm" thành số phút để so sánh
-const timeToMinutes = (time) => {
-  if (!time) return null;
-  const [hours, minutes] = time.split(":").map(Number);
-  return hours * 60 + minutes;
-};
-
-// Rule kiểm tra fie_a & fie_b
-const customRule = (index, field) => {
-  const fieA = items.value[index].fie_a;
-  const fieB = items.value[index].fie_b;
-
-  // Nếu cả hai đều rỗng, không báo lỗi
-  if (!fieA && !fieB) return true;
-
-  // Kiểm tra định dạng HH:mm
-  const timeRegex = /^([01]\d|2[0-3]):([0-5]\d)$/;
-  if (fieA && !timeRegex.test(fieA)) return "Field A phải có định dạng HH:mm!";
-  if (fieB && !timeRegex.test(fieB)) return "Field B phải có định dạng HH:mm!";
-
-  // Kiểm tra bắt buộc nhập cả hai
-  if (field === "fie_b" && fieA && !fieB) return "Vui lòng nhập Field B!";
-  if (field === "fie_a" && fieB && !fieA) return "Vui lòng nhập Field A!";
-
-  // Kiểm tra fie_a phải nhỏ hơn hoặc bằng fie_b
-  if (fieA && fieB && timeToMinutes(fieA) > timeToMinutes(fieB)) {
-    return field === "fie_a" ? "Field A phải nhỏ hơn hoặc bằng Field B!" : true;
-  }
-
-  return true;
-};
-
-// Reset lỗi khi xóa hết giá trị
-const resetErrors = (resetForm) => {
-  const allEmpty = items.value.every((item) => !item.fie_a && !item.fie_b);
-  if (allEmpty) resetForm({ values: items.value });
-};
-
-// Thêm một object mới vào danh sách
-const add = () => {
+// Thêm một object mới vào mảng
+const add = (): void => {
   items.value.push({ fie_a: "", fie_b: "" });
 };
 
-// Xóa item khỏi danh sách và reset lỗi
-const remove = (index, resetForm) => {
+// Xóa item khỏi mảng
+const remove = (index: number): void => {
   items.value.splice(index, 1);
-  resetErrors(resetForm);
 };
 
-// Xử lý khi submit
-const onSubmit = (values) => {
+// Xử lý khi submit với kiểu cho mảng object
+const onSubmit = (values: { items: FormItem[] }): void => {
   console.log("Form hợp lệ!", values);
   alert("Form đã được submit thành công!");
 };

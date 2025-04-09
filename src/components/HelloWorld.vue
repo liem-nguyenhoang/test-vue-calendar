@@ -1,227 +1,267 @@
 <template>
-  <v-container class="user-table">
-    <div class="user-table__header">
-      <div class="user-table__results">
-        検索結果 <span class="user-table__count">{{ totalItems }}</span> 件
-      </div>
-      <div class="user-table__display-control">
-        表示件数
-        <v-select
-          v-model="itemsPerPage"
-          :items="[10]"
+  <div class="shipping-form">
+    <!-- Header -->
+    <div class="shipping-form__header">
+      <h2 class="shipping-form__title">消費者指名/検索消費者データ一覧</h2>
+      <v-btn
+        class="shipping-form__add-btn"
+        variant="text"
+        prepend-icon="mdi-plus"
+        >新規登録</v-btn
+      >
+    </div>
+
+    <!-- Form -->
+    <v-form class="shipping-form__form">
+      <v-row>
+        <!-- Left Column -->
+        <v-col cols="12" md="6">
+          <div class="shipping-form__field">
+            <label class="shipping-form__label">地域</label>
+            <v-select
+              v-model="location"
+              :items="locations"
+              placeholder="地域を選択してください"
+              variant="outlined"
+              density="compact"
+              class="shipping-form__input"
+            />
+          </div>
+
+          <div class="shipping-form__field">
+            <label class="shipping-form__label">ログインID</label>
+            <v-text-field
+              v-model="loginId"
+              placeholder="ID（半角英数字・記号）"
+              variant="outlined"
+              density="compact"
+              class="shipping-form__input"
+            />
+          </div>
+
+          <div class="shipping-form__field">
+            <label class="shipping-form__label">メールアドレス</label>
+            <v-text-field
+              v-model="email"
+              placeholder="mail@address.co.jp"
+              variant="outlined"
+              density="compact"
+              class="shipping-form__input"
+            />
+          </div>
+
+          <div class="shipping-form__field">
+            <label class="shipping-form__label">購置</label>
+            <v-row>
+              <v-col>
+                <v-checkbox
+                  v-model="isShippingAssigned"
+                  label="消費者指名"
+                  color="primary"
+                  class="shipping-form__checkbox"
+                />
+              </v-col>
+              <v-col>
+                <v-checkbox
+                  v-model="isShippingProhibited"
+                  label="救急消費者"
+                  color="primary"
+                  class="shipping-form__checkbox"
+                />
+              </v-col>
+            </v-row>
+          </div>
+        </v-col>
+
+        <!-- Right Column -->
+        <v-col cols="12" md="6">
+          <div class="shipping-form__field">
+            <label class="shipping-form__label">利用者名</label>
+            <v-text-field
+              v-model="userName"
+              placeholder="利用者名を入力"
+              variant="outlined"
+              density="compact"
+              class="shipping-form__input"
+            />
+          </div>
+
+          <div class="shipping-form__field">
+            <label class="shipping-form__label">施設利用者ID</label>
+            <v-text-field
+              v-model="facilityUserId"
+              placeholder="ID（半角英数字・記号）"
+              variant="outlined"
+              density="compact"
+              class="shipping-form__input"
+            />
+          </div>
+
+          <div class="shipping-form__field">
+            <label class="shipping-form__label">施設</label>
+            <v-text-field
+              v-model="facility"
+              placeholder="施設名を入力"
+              variant="outlined"
+              density="compact"
+              class="shipping-form__input"
+            />
+          </div>
+        </v-col>
+      </v-row>
+
+      <!-- Buttons -->
+      <div class="shipping-form__actions">
+        <v-btn
+          class="shipping-form__btn shipping-form__btn--cancel"
           variant="outlined"
-          density="compact"
-          class="user-table__select"
-          hide-details
+          >キャンセル</v-btn
         >
-          <template v-slot:selection="{ item }"> {{ item.value }}件 </template>
-          <template v-slot:item="{ item }"> {{ item.value }}件 </template>
-        </v-select>
+        <v-btn
+          class="shipping-form__btn shipping-form__btn--save"
+          color="primary"
+          >保存</v-btn
+        >
       </div>
-    </div>
-
-    <v-table class="user-table__data">
-      <thead>
-        <tr>
-          <th class="user-table__column-header">ID</th>
-          <th class="user-table__column-header">ユーザー名</th>
-          <th class="user-table__column-header">職種</th>
-          <th class="user-table__column-header">編集</th>
-          <th class="user-table__column-header">削除</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr v-for="user in users" :key="user.id" class="user-table__row">
-          <td class="user-table__cell">{{ user.id }}</td>
-          <td class="user-table__cell">{{ user.name }} ({{ user.role }})</td>
-          <td class="user-table__cell">{{ user.position }}</td>
-          <td class="user-table__cell">
-            <v-btn
-              icon
-              size="small"
-              variant="text"
-              color="primary"
-              class="user-table__edit-button"
-            >
-              <v-icon>mdi-pencil</v-icon>
-            </v-btn>
-          </td>
-          <td class="user-table__cell">
-            <v-btn
-              icon
-              size="small"
-              variant="text"
-              class="user-table__delete-button"
-            >
-              <v-icon>mdi-delete-outline</v-icon>
-            </v-btn>
-          </td>
-        </tr>
-      </tbody>
-    </v-table>
-
-    <div class="user-table__pagination">
-      <v-pagination
-        v-model="page"
-        :length="totalPages"
-        :total-visible="5"
-        rounded
-      ></v-pagination>
-    </div>
-  </v-container>
+    </v-form>
+  </div>
 </template>
 
 <script setup>
-import { ref, computed } from "vue";
+import { ref } from "vue";
 
-const users = ref([
-  {
-    id: "00001",
-    name: "山田 太郎",
-    role: "サービス運営責任者",
-    position: "消防指令台",
-  },
-  {
-    id: "00002",
-    name: "山田 太郎",
-    role: "サービス運営責任者",
-    position: "消防指令台",
-  },
-  {
-    id: "00003",
-    name: "田中 花子",
-    role: "緊急通報管理者",
-    position: "救急消防士",
-  },
-  {
-    id: "00004",
-    name: "田中 花子",
-    role: "緊急通報管理者",
-    position: "救急消防士",
-  },
-  {
-    id: "00005",
-    name: "山田 太郎",
-    role: "サービス運営責任者",
-    position: "消防指令台",
-  },
-  {
-    id: "00006",
-    name: "山田 太郎",
-    role: "サービス運営責任者",
-    position: "消防指令台",
-  },
-  {
-    id: "00007",
-    name: "山田 太郎",
-    role: "サービス運営責任者",
-    position: "消防指令台",
-  },
-  {
-    id: "00008",
-    name: "山田 太郎",
-    role: "サービス運営責任者",
-    position: "消防指令台",
-  },
-  {
-    id: "00009",
-    name: "山田 太郎",
-    role: "サービス運営責任者",
-    position: "消防指令台",
-  },
-  {
-    id: "00010",
-    name: "山田 太郎",
-    role: "サービス運営責任者",
-    position: "消防指令台",
-  },
+// Form data
+const location = ref("");
+const loginId = ref("");
+const email = ref("");
+const userName = ref("");
+const facilityUserId = ref("");
+const facility = ref("");
+const isShippingAssigned = ref(true);
+const isShippingProhibited = ref(false);
+
+// Locations for the dropdown
+const locations = ref([
+  "地域を選択してください",
+  "北海道",
+  "東北",
+  "関東",
+  "中部",
+  "近畿",
+  "中国",
+  "四国",
+  "九州",
 ]);
-
-const page = ref(1);
-const itemsPerPage = ref(10);
-const totalItems = computed(() => users.value.length);
-const totalPages = computed(() =>
-  Math.ceil(totalItems.value / itemsPerPage.value)
-);
 </script>
 
-<style lang="scss" scoped>
-.user-table {
-  background-color: white;
+<style lang="scss">
+.shipping-form {
+  padding: 20px;
+  background: #f5f5f5;
   border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  padding: 24px;
-  max-width: 1200px;
-  margin: 0 auto;
 
   &__header {
     display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 16px;
+    flex-wrap: nowrap; /* Ngăn không cho các phần tử xuống dòng */
+    align-items: center; /* Căn giữa theo chiều dọc */
+    justify-content: space-between; /* Đẩy tiêu đề và nút ra hai bên */
+    margin-bottom: 15px;
+    width: 100%; /* Đảm bảo header chiếm toàn bộ chiều rộng */
   }
 
-  &__results {
+  &__title {
+    font-size: 20px;
     font-weight: 500;
-    font-size: 16px;
+    color: #333;
+    margin: 0; /* Xóa margin mặc định của h2 */
+    line-height: 1; /* Đảm bảo chiều cao dòng không làm lệch căn chỉnh */
+    flex-shrink: 0; /* Ngăn tiêu đề bị co lại */
   }
 
-  &__count {
-    font-weight: bold;
-  }
-
-  &__display-control {
-    display: flex;
+  &__add-btn {
+    color: #1976d2;
+    font-size: 14px;
+    height: 24px !important; /* Đảm bảo nút không quá cao */
+    padding: 0 8px !important; /* Giảm padding để nút nhỏ gọn */
+    display: inline-flex; /* Đảm bảo nút hiển thị đúng trong flex */
     align-items: center;
-    gap: 8px;
-  }
-
-  &__select {
-    width: 120px;
-  }
-
-  &__data {
-    width: 100%;
-    border-collapse: collapse;
-    margin-bottom: 16px;
-  }
-
-  &__column-header {
-    text-align: left;
-    padding: 12px 16px;
-    border-bottom: 1px solid #e0e0e0;
-    font-weight: 500;
-    color: rgba(0, 0, 0, 0.87);
-  }
-
-  &__row {
-    border-bottom: 1px solid #e0e0e0;
-
-    &:hover {
-      background-color: #f5f5f5;
+    flex-shrink: 0; /* Ngăn nút bị co lại */
+    .v-btn__prepend {
+      margin-right: 4px; /* Khoảng cách giữa icon và chữ */
     }
   }
 
-  &__cell {
-    padding: 12px 16px;
-    color: rgba(0, 0, 0, 0.87);
+  &__form {
+    background: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   }
 
-  &__edit-button,
-  &__delete-button {
-    margin: 0;
-    min-width: 36px;
-    min-height: 36px;
+  &__field {
+    margin-bottom: 15px;
   }
 
-  &__delete-button {
-    color: rgba(0, 0, 0, 0.6);
+  &__label {
+    display: block;
+    font-size: 14px;
+    font-weight: 500;
+    margin-bottom: 5px;
+    color: #333;
   }
 
-  &__pagination {
+  &__input {
+    .v-field {
+      border-radius: 4px;
+      border: 1px solid #ccc !important;
+      font-size: 14px;
+    }
+
+    .v-field__input {
+      padding: 8px 12px;
+      min-height: 36px !important;
+    }
+
+    .v-field--focused {
+      border-color: #1976d2 !important;
+    }
+  }
+
+  &__checkbox {
+    .v-label {
+      font-size: 14px;
+      color: #333;
+    }
+
+    .v-selection-control {
+      min-height: 24px;
+    }
+  }
+
+  &__actions {
     display: flex;
-    justify-content: center;
-    margin-top: 16px;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 20px;
+  }
+
+  &__btn {
+    font-size: 14px;
+    padding: 6px 16px;
+    height: 36px;
+    border-radius: 18px;
+
+    &--cancel {
+      color: #333;
+      border: 1px solid #ccc;
+      background: transparent;
+    }
+
+    &--save {
+      background-color: #1976d2;
+      color: #fff;
+      border: none;
+    }
   }
 }
 </style>

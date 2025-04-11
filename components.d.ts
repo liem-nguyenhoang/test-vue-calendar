@@ -7,6 +7,9 @@ export {}
 /* prettier-ignore */
 declare module 'vue' {
   export interface GlobalComponents {
+    App1: typeof import('./src/components/App1.vue')['default']
+    App2: typeof import('./src/components/App2.vue')['default']
+    App3: typeof import('./src/components/App3.vue')['default']
     Calendar: typeof import('./src/components/calendar/Calendar.vue')['default']
     CalendarDay: typeof import('./src/components/calendar/CalendarDay.vue')['default']
     CalendarEvent: typeof import('./src/components/calendar/CalendarEvent.vue')['default']
